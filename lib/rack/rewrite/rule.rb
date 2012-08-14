@@ -55,6 +55,14 @@ module Rack
         def x_send_file(*args)
           add_rule :x_send_file, *args
         end
+
+        # Creates a rule that will tell nginx to redirect immediately
+        # if matched.
+        #
+        #  x_accel_redirect /^\/files\/(.+)/, '/protected/$1'
+        def x_accel_redirect(*args)
+          add_rule :x_accel_redirect, *args
+        end
         
       private
         def add_rule(method, from, to, options = {}) #:nodoc:
@@ -108,6 +116,10 @@ module Rack
             'X-Sendfile'     => interpreted_to,
             'Content-Length' => ::File.size(interpreted_to).to_s,
             'Content-Type'   => Rack::Mime.mime_type(::File.extname(interpreted_to))
+            }.merge!(additional_headers), []]
+        when :x_accel_redirect
+          [200, {
+            'X-Accel-Redirect' => interpreted_to
             }.merge!(additional_headers), []]
         else
           raise Exception.new("Unsupported rule: #{self.rule_type}")
